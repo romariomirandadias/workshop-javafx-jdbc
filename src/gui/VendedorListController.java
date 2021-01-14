@@ -31,6 +31,7 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.entities.Vendedor;
+import model.services.DepartmentServices;
 import model.services.VendedorServices;
 
 public class VendedorListController implements Initializable, DataChangeListener {
@@ -111,7 +112,8 @@ public class VendedorListController implements Initializable, DataChangeListener
 			FXMLLoader loader = new FXMLLoader(getClass().getResource(absoluteName));
 			Pane pane = loader.load();
 			VendedorFormController controller = loader.getController();			controller.setVendedor(obj);
-			controller.setVendedorService(new VendedorServices());
+			controller.setServices(new VendedorServices(),new DepartmentServices());
+			controller.loadAssociatedObjects();
 			controller.subscribeDataChangeListener(this);
 			controller.updateFormData();
 			Stage dialogStage = new Stage();

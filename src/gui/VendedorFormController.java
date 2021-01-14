@@ -15,46 +15,58 @@ import gui.listeners.DataChangeListener;
 import gui.util.Alerts;
 import gui.util.Constraints;
 import gui.util.Utils;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.util.Callback;
+import model.entities.Department;
 import model.entities.Vendedor;
 import model.exceptions.ValidationException;
+import model.services.DepartmentServices;
 import model.services.VendedorServices;
 
 public class VendedorFormController implements Initializable {
 
 	private VendedorServices service;
+	private DepartmentServices departmentService;
 	private Vendedor entiti;
 	private List<DataChangeListener> dataChangeListeners = new ArrayList<>();
 	@FXML
 	private TextField txtId;
 	@FXML
 	private TextField txtName;
-	
+
 	@FXML
 	private TextField txtEmail;
-	
+
+	@FXML
+	private ComboBox<Department> comboBoxDepartment;
+
 	@FXML
 	private DatePicker dpBirthDate;
-	
+
 	@FXML
 	private TextField txtBaseSalary;
 
 	@FXML
 	private Label labelErrorName;
-	
+
 	@FXML
 	private Label labelErrorEmail;
-	
+
 	@FXML
 	private Label labelErrorBirthDate;
-	
+
 	@FXML
 	private Label labelErrorBaseSalary;
 
@@ -64,8 +76,11 @@ public class VendedorFormController implements Initializable {
 	@FXML
 	private Button btCancel;
 
-	public void setVendedorService(VendedorServices service) {
+	private ObservableList<Department> obsList;
+
+	public void setServices(VendedorServices service, DepartmentServices departmentService) {
 		this.service = service;
+		this.departmentService = departmentService;
 	}
 
 	public void setVendedor(Vendedor entiti) {
@@ -134,6 +149,7 @@ public class VendedorFormController implements Initializable {
 		Constraints.setTextFieldDouble(txtBaseSalary);
 		Constraints.setTextFieldMaxLength(txtEmail, 60);
 		Utils.formatDatePicker(dpBirthDate, "dd/MM/yyyy");
+		initializeComboBoxDepartment();
 	}
 
 	public void updateFormData() {
@@ -144,10 +160,25 @@ public class VendedorFormController implements Initializable {
 		txtName.setText(entiti.getName());
 		txtEmail.setText(entiti.getEmail());
 		Locale.setDefault(Locale.US);
-		txtBaseSalary.setText(String.format("%.2f",entiti.getBaseSalary()));
-		if(entiti.getBirthDate()!=null) {
-		dpBirthDate.setValue(LocalDate.ofInstant(entiti.getBirthDate().toInstant(), ZoneId.systemDefault()));
+		txtBaseSalary.setText(String.format("%.2f", entiti.getBaseSalary()));
+		if (entiti.getBirthDate() != null) {
+			dpBirthDate.setValue(LocalDate.ofInstant(entiti.getBirthDate().toInstant(), ZoneId.systemDefault()));
 		}
+		if(entiti.getDepartment()==null) {
+			comboBoxDepartment.getSelectionModel().selectFirst();
+		}
+		else {
+	comboBoxDepartment.setValue(entiti.getDepartment());
+		}
+	}
+
+	public void loadAssociatedObjects() {
+		if (departmentService == null) {
+			throw new IllegalStateException("DepartmentService was null");
+		}
+		List<Department> list = departmentService.findAll();
+		obsList = FXCollections.observableArrayList(list);
+		comboBoxDepartment.setItems(obsList);
 	}
 
 	private void setErrorMessages(Map<String, String> errors) {
@@ -156,5 +187,17 @@ public class VendedorFormController implements Initializable {
 		if (fields.contains("name")) {
 			labelErrorName.setText(errors.get("name"));
 		}
+	}
+
+	private void initializeComboBoxDepartment() {
+		Callback<ListView<Department>, ListCell<Department>> factory = lv -> new ListCell<Department>() {
+			@Override
+			protected void updateItem(Department item, boolean empty) {
+				super.updateItem(item, empty);
+				setText(empty ? "" : item.getName());
+			}
+		};
+		comboBoxDepartment.setCellFactory(factory);
+		comboBoxDepartment.setButtonCell(factory.call(null));
 	}
 }
